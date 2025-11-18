@@ -1,0 +1,380 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Калькулятор заточки коньков</title>
+    <link rel="manifest" href="manifest.json">
+    <link rel="apple-touch-icon" href="icon.png">
+    <meta name="theme-color" content="#ffffff">
+    <style>
+        :root {
+            --bg-color: #ffffff;
+            --text-color: #000000;
+            --accent-color: #007bff;
+            --card-bg: #f8f9fa;
+        }
+        body.dark {
+            --bg-color: #121212;
+            --text-color: #ffffff;
+            --accent-color: #bb86fc;
+            --card-bg: #1e1e1e;
+        }
+        body {
+            font-family: Arial, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            transition: background-color 0.3s, color 0.3s;
+        }
+        .container {
+            max-width: 400px;
+            width: 100%;
+            padding: 20px;
+            background-color: var(--card-bg);
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+            transition: background-color 0.3s;
+        }
+        h1 {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+        }
+        select, button {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            transition: background-color 0.3s, color 0.3s;
+        }
+        button {
+            background-color: var(--accent-color);
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+        button:hover {
+            opacity: 0.9;
+        }
+        #result {
+            margin-top: 20px;
+            padding: 10px;
+            background-color: var(--bg-color);
+            border-radius: 5px;
+            text-align: center;
+        }
+        .switchers {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 20px;
+        }
+        .theme-toggle, .lang-toggle {
+            display: flex;
+            align-items: center;
+        }
+        .theme-toggle span, .lang-toggle span {
+            margin-right: 10px;
+        }
+        .toggle {
+            position: relative;
+            display: inline-block;
+            width: 40px;
+            height: 20px;
+        }
+        .toggle input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #ccc;
+            transition: .4s;
+            border-radius: 20px;
+        }
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 16px;
+            width: 16px;
+            left: 2px;
+            bottom: 2px;
+            background-color: white;
+            transition: .4s;
+            border-radius: 50%;
+        }
+        input:checked + .slider {
+            background-color: var(--accent-color);
+        }
+        input:checked + .slider:before {
+            transform: translateX(20px);
+        }
+        .icon {
+            font-size: 20px;
+            margin-left: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1 id="title">Калькулятор заточки коньков</h1>
+        <div class="switchers">
+            <div class="theme-toggle">
+                <span id="theme-label">Тема:</span>
+                <label class="toggle">
+                    <input type="checkbox" id="theme-switch">
+                    <span class="slider"></span>
+                </label>
+                <span class="icon" id="theme-icon">☀️</span>
+            </div>
+            <div class="lang-toggle">
+                <span id="lang-label">Язык:</span>
+                <label class="toggle">
+                    <input type="checkbox" id="lang-switch">
+                    <span class="slider"></span>
+                </label>
+                <span class="icon" id="lang-icon">RU</span>
+            </div>
+        </div>
+        <label for="style" id="style-label">Стиль катания:</label>
+        <select id="style">
+            <option value="hockey">Хоккей (игровой)</option>
+            <option value="figure_freestyle">Фигурное (фристайл)</option>
+            <option value="figure_dance">Фигурное (танцы)</option>
+            <option value="speed_long">Спидскейтинг (длинный трек)</option>
+            <option value="speed_short">Спидскейтинг (шорт-трек)</option>
+        </select>
+        <label for="level" id="level-label">Уровень катания:</label>
+        <select id="level">
+            <option value="beginner">Новичок</option>
+            <option value="intermediate">Средний</option>
+            <option value="advanced">Продвинутый</option>
+        </select>
+        <label for="weight" id="weight-label">Весовая категория:</label>
+        <select id="weight">
+            <option value="light">Лёгкий (<60 кг)</option>
+            <option value="medium">Средний (60-80 кг)</option>
+            <option value="heavy">Тяжёлый (>80 кг)</option>
+        </select>
+        <button id="calculate">Рассчитать</button>
+        <div id="result"></div>
+    </div>
+
+    <script>
+        // Данные на основе таблицы
+        const data = {
+            hockey: {
+                beginner: {
+                    light: { inch: '1/2" - 5/8"', mm: '12.7 - 15.9' },
+                    medium: { inch: '5/8" - 3/4"', mm: '15.9 - 19' },
+                    heavy: { inch: '3/4" - 1"', mm: '19 - 25.4' }
+                },
+                intermediate: {
+                    light: { inch: '7/16" - 1/2"', mm: '11.1 - 12.7' },
+                    medium: { inch: '1/2" - 5/8"', mm: '12.7 - 15.9' },
+                    heavy: { inch: '5/8" - 3/4"', mm: '15.9 - 19' }
+                },
+                advanced: {
+                    light: { inch: '3/8" - 7/16"', mm: '9.5 - 11.1' },
+                    medium: { inch: '7/16" - 1/2"', mm: '11.1 - 12.7' },
+                    heavy: { inch: '1/2" - 5/8"', mm: '12.7 - 15.9' }
+                }
+            },
+            figure_freestyle: {
+                beginner: {
+                    light: { inch: '1/2"', mm: '12.7' },
+                    medium: { inch: '1/2" - 5/8"', mm: '12.7 - 15.9' },
+                    heavy: { inch: '5/8"', mm: '15.9' }
+                },
+                intermediate: {
+                    light: { inch: '7/16" - 1/2"', mm: '11.1 - 12.7' },
+                    medium: { inch: '7/16"', mm: '11.1' },
+                    heavy: { inch: '1/2"', mm: '12.7' }
+                },
+                advanced: {
+                    light: { inch: '3/8" - 7/16"', mm: '9.5 - 11.1' },
+                    medium: { inch: '3/8" - 7/16"', mm: '9.5 - 11.1' },
+                    heavy: { inch: '7/16" - 1/2"', mm: '11.1 - 12.7' }
+                }
+            },
+            figure_dance: {
+                beginner: {
+                    light: { inch: '1/2"', mm: '12.7' },
+                    medium: { inch: '1/2" - 5/8"', mm: '12.7 - 15.9' },
+                    heavy: { inch: '5/8"', mm: '15.9' }
+                },
+                intermediate: {
+                    light: { inch: '7/16" - 1/2"', mm: '11.1 - 12.7' },
+                    medium: { inch: '1/2"', mm: '12.7' },
+                    heavy: { inch: '1/2" - 5/8"', mm: '12.7 - 15.9' }
+                },
+                advanced: {
+                    light: { inch: '3/8" - 7/16"', mm: '9.5 - 11.1' },
+                    medium: { inch: '7/16" - 1/2"', mm: '11.1 - 12.7' },
+                    heavy: { inch: '1/2"', mm: '12.7' }
+                }
+            },
+            speed_long: {
+                all: {
+                    any: { inch: 'Flat или 1" - 1 1/4"', mm: '25.4 - 31.8' }
+                }
+            },
+            speed_short: {
+                all: {
+                    any: { inch: '3/4" - 1"', mm: '19 - 25.4' }
+                }
+            }
+        };
+
+        // Переводы
+        const translations = {
+            ru: {
+                title: 'Калькулятор заточки коньков',
+                themeLabel: 'Тема:',
+                langLabel: 'Язык:',
+                styleLabel: 'Стиль катания:',
+                levelLabel: 'Уровень катания:',
+                weightLabel: 'Весовая категория:',
+                calculate: 'Рассчитать',
+                result: 'Рекомендуемый ROH: {inch} ({mm} мм)',
+                styles: {
+                    hockey: 'Хоккей (игровой)',
+                    figure_freestyle: 'Фигурное (фристайл)',
+                    figure_dance: 'Фигурное (танцы)',
+                    speed_long: 'Спидскейтинг (длинный трек)',
+                    speed_short: 'Спидскейтинг (шорт-трек)'
+                },
+                levels: {
+                    beginner: 'Новичок',
+                    intermediate: 'Средний',
+                    advanced: 'Продвинутый'
+                },
+                weights: {
+                    light: 'Лёгкий (<60 кг)',
+                    medium: 'Средний (60-80 кг)',
+                    heavy: 'Тяжёлый (>80 кг)'
+                }
+            },
+            en: {
+                title: 'Skate Sharpening Calculator',
+                themeLabel: 'Theme:',
+                langLabel: 'Language:',
+                styleLabel: 'Skating Style:',
+                levelLabel: 'Skating Level:',
+                weightLabel: 'Weight Category:',
+                calculate: 'Calculate',
+                result: 'Recommended ROH: {inch} ({mm} mm)',
+                styles: {
+                    hockey: 'Hockey (Game)',
+                    figure_freestyle: 'Figure (Freestyle)',
+                    figure_dance: 'Figure (Dance)',
+                    speed_long: 'Speed Skating (Long Track)',
+                    speed_short: 'Speed Skating (Short Track)'
+                },
+                levels: {
+                    beginner: 'Beginner',
+                    intermediate: 'Intermediate',
+                    advanced: 'Advanced'
+                },
+                weights: {
+                    light: 'Light (<60 kg)',
+                    medium: 'Medium (60-80 kg)',
+                    heavy: 'Heavy (>80 kg)'
+                }
+            }
+        };
+
+        let currentLang = 'ru';
+        let isDark = false;
+
+        function updateLanguage() {
+            const lang = translations[currentLang];
+            document.getElementById('title').textContent = lang.title;
+            document.getElementById('theme-label').textContent = lang.themeLabel;
+            document.getElementById('lang-label').textContent = lang.langLabel;
+            document.getElementById('style-label').textContent = lang.styleLabel;
+            document.getElementById('level-label').textContent = lang.levelLabel;
+            document.getElementById('weight-label').textContent = lang.weightLabel;
+            document.getElementById('calculate').textContent = lang.calculate;
+            document.getElementById('lang-icon').textContent = currentLang.toUpperCase();
+
+            // Обновить опции селектов
+            const styleSelect = document.getElementById('style');
+            Object.keys(lang.styles).forEach((key, i) => {
+                styleSelect.options[i].text = lang.styles[key];
+            });
+            const levelSelect = document.getElementById('level');
+            Object.keys(lang.levels).forEach((key, i) => {
+                levelSelect.options[i].text = lang.levels[key];
+            });
+            const weightSelect = document.getElementById('weight');
+            Object.keys(lang.weights).forEach((key, i) => {
+                weightSelect.options[i].text = lang.weights[key];
+            });
+        }
+
+        function toggleTheme() {
+            isDark = !isDark;
+            document.body.classList.toggle('dark', isDark);
+            document.getElementById('theme-icon').textContent = isDark ? '🌙' : '☀️';
+        }
+
+        function toggleLang() {
+            currentLang = currentLang === 'ru' ? 'en' : 'ru';
+            updateLanguage();
+        }
+
+        document.getElementById('theme-switch').addEventListener('change', toggleTheme);
+        document.getElementById('lang-switch').addEventListener('change', toggleLang);
+
+        document.getElementById('calculate').addEventListener('click', () => {
+            const style = document.getElementById('style').value;
+            const level = document.getElementById('level').value;
+            const weight = document.getElementById('weight').value;
+
+            let roh;
+            if (style.startsWith('speed_')) {
+                roh = data[style].all.any;
+            } else {
+                roh = data[style][level][weight];
+            }
+
+            if (roh) {
+                const lang = translations[currentLang];
+                const resultText = lang.result.replace('{inch}', roh.inch).replace('{mm}', roh.mm);
+                document.getElementById('result').innerHTML = resultText;
+            } else {
+                document.getElementById('result').innerHTML = currentLang === 'ru' ? 'Данные не найдены' : 'Data not found';
+            }
+        });
+
+        // Инициализация
+        updateLanguage();
+
+        // PWA Service Worker registration
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('./sw.js')
+                    .then(reg => console.log('Service Worker registered', reg))
+                    .catch(err => console.error('Service Worker registration failed:', err));
+            });
+        }
+    </script>
+</body>
+</html>
